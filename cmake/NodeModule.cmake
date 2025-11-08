@@ -1,6 +1,6 @@
 include_guard(GLOBAL)
 
-function(NodeModule_Add name)
+function(NodeModule_Find name)
     execute_process(
         COMMAND node --eval "require('${name}').include_dir" --print
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"

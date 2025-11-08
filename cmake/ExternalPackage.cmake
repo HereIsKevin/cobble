@@ -32,19 +32,11 @@ function(ExternalPackage_Start)
 endfunction()
 
 function(ExternalPackage_Add name)
-    if(NOT EXTERNAL_PACKAGE_BUILD)
-        find_package(
-            "${name}"
-            REQUIRED
-            CONFIG
-            PATHS "${CMAKE_BINARY_DIR}/deps/${name}/"
-            NO_DEFAULT_PATH
-        )
+    cmake_parse_arguments(PARSE_ARGV 1 arg "TEST" "URL;HASH" "CMAKE_ARGS")
 
+    if(NOT EXTERNAL_PACKAGE_BUILD)
         return()
     endif()
-
-    cmake_parse_arguments(PARSE_ARGV 1 arg "TEST" "URL;HASH" "CMAKE_ARGS")
 
     if(arg_TEST)
         set(
@@ -55,23 +47,44 @@ function(ExternalPackage_Add name)
         )
     endif()
 
+    set(prefix "${CMAKE_BINARY_DIR}/deps/${name}/")
+
     ExternalProject_Add(
         "${name}"
-        PREFIX "${CMAKE_BINARY_DIR}/deps/${name}/"
+        PREFIX "${prefix}"
         URL "${arg_URL}"
         URL_HASH "SHA256=${arg_HASH}"
         DOWNLOAD_NO_PROGRESS TRUE
         TLS_VERIFY TRUE
         CMAKE_ARGS
+            -D "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+            -D "CMAKE_PREFIX_PATH=${_EXTERNAL_PROJECT_FIND_PATHS}"
             ${arg_CMAKE_ARGS}
         UPDATE_COMMAND ""
         ${test_command}
-        DEPENDS ${EXTERNAL_PROJECT_TARGETS}
+        DEPENDS ${_EXTERNAL_PROJECT_TARGETS}
     )
 
-    list(APPEND EXTERNAL_PROJECT_TARGETS "${name}")
-    set(EXTERNAL_PROJECT_TARGETS ${EXTERNAL_PROJECT_TARGETS} PARENT_SCOPE)
+    list(APPEND _EXTERNAL_PROJECT_TARGETS "${name}")
+    set(_EXTERNAL_PROJECT_TARGETS ${_EXTERNAL_PROJECT_TARGETS} PARENT_SCOPE)
+
+    list(APPEND _EXTERNAL_PROJECT_FIND_PATHS "${prefix}")
+    set(
+        _EXTERNAL_PROJECT_FIND_PATHS
+        ${_EXTERNAL_PROJECT_FIND_PATHS}
+        PARENT_SCOPE
+    )
+endfunction()
+
+function(ExternalPackage_Find name)
+    find_package(
+        "${name}"
+        REQUIRED
+        CONFIG
+        PATHS "${CMAKE_BINARY_DIR}/deps/${name}/"
+        NO_DEFAULT_PATH
+    )
 endfunction()
 
 macro(ExternalPackage_End)

@@ -6,30 +6,22 @@
   },
   "configurePresets": [
     {
-      "name": "default",
+      "name": "debug",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/"
-    }
-  ],
-  "buildPresets": [
+      "binaryDir": "${sourceDir}/build/",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": true
+      }
+    },
     {
-      "name": "default",
-      "configurePreset": "default"
-    }
-  ],
-  "workflowPresets": [
-    {
-      "name": "default",
-      "steps": [
-        {
-          "type": "configure",
-          "name": "default"
-        },
-        {
-          "type": "build",
-          "name": "default"
-        }
-      ]
+      "name": "release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+      }
     }
   ]
 }
