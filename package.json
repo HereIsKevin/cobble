@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "node-addon-api": "^8.5.0",
+    "node-api-headers": "^1.6.0"
+  }
+}
