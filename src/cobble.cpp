@@ -25,7 +25,9 @@ public:
   JpegHandle(TJINIT type) : type(type), handle(tj3Init(type)) {}
 
   ~JpegHandle() {
-    tj3Destroy(handle);
+    if (handle != nullptr) {
+      tj3Destroy(handle);
+    }
   }
 
   tjhandle get() {
@@ -55,11 +57,50 @@ public:
 
 // JPEG data buffer.
 struct JpegData {
-  std::uint8_t* buffer;
-  std::size_t size;
+  std::uint8_t* buffer = nullptr;
+  std::size_t size = 0;
 
   ~JpegData() {
-    tj3Free(buffer);
+    if (buffer != nullptr) {
+      tj3Free(buffer);
+    }
+  }
+};
+
+// WebP demuxer wrapper with automatic destruction.
+class WebPDemuxer_ {
+  WebPData data;
+  WebPDemuxer* demux;
+
+public:
+  WebPDemuxer_(std::uint8_t* buffer, std::size_t size) :
+    data({.bytes = buffer, .size = size}),
+    demux(WebPDemux(&data)) {}
+
+  ~WebPDemuxer_() {
+    WebPDemuxDelete(demux);
+  }
+
+  tjhandle get() {
+    return demux;
+  }
+
+  operator WebPDemuxer*() {
+    return demux;
+  }
+};
+
+// WebP demux chunk iterator with automatic release.
+struct WebPChunkIterator_ : public WebPChunkIterator {
+  ~WebPChunkIterator_() {
+    WebPDemuxReleaseChunkIterator(this);
+  }
+};
+
+// WebP demux iterator with automatic release.
+struct WebPIterator_ : public WebPIterator {
+  ~WebPIterator_() {
+    WebPDemuxReleaseIterator(this);
   }
 };
 
@@ -272,15 +313,9 @@ public:
     }
     Napi::Uint8Array input = typedArray.As<Napi::Uint8Array>();
 
-    // Initialize WebP data container.
-    WebPData data = {
-      .bytes = input.Data(),
-      .size = input.ElementLength(),
-    };
-
     // Create WebP demuxer.
-    WebPDemuxer* demux = WebPDemux(&data);
-    if (demux == nullptr) {
+    WebPDemuxer_ demux(input.Data(), input.ElementLength());
+    if (demux.get() == nullptr) {
       throw Napi::Error::New(env, "WebP decoding failed");
     }
 
@@ -291,18 +326,15 @@ public:
     // Make sure WebP is not animated or transparent.
     std::uint32_t flags = WebPDemuxGetI(demux, WEBP_FF_FORMAT_FLAGS);
     if (flags & ANIMATION_FLAG) {
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Only still images are supported");
     }
     if (flags & ALPHA_FLAG) {
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Only opaque images are supported");
     }
 
     // Make sure WebP only has 1 frame.
     std::uint32_t frames = WebPDemuxGetI(demux, WEBP_FF_FRAME_COUNT);
     if (frames != 1) {
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(
         env,
         "Impossible, still image has no frames or more than 1 frame"
@@ -314,76 +346,48 @@ public:
     if (flags & ICCP_FLAG) {
       // Retrieve ICC profile chunk, make sure that is is the first ICC profile
       // chunk, and make sure that there are not multiple ICC profile chunks.
-      WebPChunkIterator chunkIter;
+      WebPChunkIterator_ chunkIter;
       if (!WebPDemuxGetChunk(demux, "ICCP", 1, &chunkIter)) {
-        WebPDemuxDelete(demux);
         throw Napi::Error::New(env, "ICC profile chunk disappeared");
       }
       if (chunkIter.chunk_num != 1) {
-        WebPDemuxReleaseChunkIterator(&chunkIter);
-        WebPDemuxDelete(demux);
-        throw Napi::Error::New(
-          env,
-          "Impossible, ICC profile chunk number changed"
-        );
+        throw Napi::Error::New(env, "Impossible, ICC profile chunk number changed");
       }
       if (chunkIter.num_chunks != 1) {
-        WebPDemuxReleaseChunkIterator(&chunkIter);
-        WebPDemuxDelete(demux);
         throw Napi::Error::New(env, "Multiple ICC profiles");
       }
 
       // Copy ICC profile to buffer.
       iccProfile = Napi::Uint8Array::New(env, chunkIter.chunk.size);
-      std::memcpy(
-        iccProfile.Data(),
-        chunkIter.chunk.bytes,
-        chunkIter.chunk.size
-      );
-
-      // Release chunk iterator.
-      WebPDemuxReleaseChunkIterator(&chunkIter);
+      std::memcpy(iccProfile.Data(), chunkIter.chunk.bytes, chunkIter.chunk.size);
     }
 
     // Retrieve WebP frame, make sure that it is the first frame, make sure
     // there are not multiple frames, make sure the frame is complete, make sure
     // the frame is opaque, and sure the frame covers the entire canvas.
-    WebPIterator iter;
+    WebPIterator_ iter;
     if (!WebPDemuxGetFrame(demux, 1, &iter)) {
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Impossible, frame disappeared");
     }
     if (iter.frame_num != 1) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Impossible, frame number changed");
     }
     if (iter.num_frames != 1) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Impossible, frame count changed");
     }
     if (!iter.complete) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Impossible, frame is not complete");
     }
     if (iter.has_alpha) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Only opaque frames are supported");
     }
     if (iter.x_offset != 0 || iter.y_offset != 0) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Only frames with no offset are supported");
     }
     if (
       static_cast<std::uint32_t>(iter.width) != width ||
       static_cast<std::uint32_t>(iter.height) != height
     ) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "Only frames filling canvas are supported");
     }
 
@@ -402,26 +406,15 @@ public:
         width * 3
       ) == nullptr
     ) {
-      WebPDemuxReleaseIterator(&iter);
-      WebPDemuxDelete(demux);
       throw Napi::Error::New(env, "WebP decoding failed");
     }
-
-    // Release frame iterator.
-    WebPDemuxReleaseIterator(&iter);
-
-    // Delete WebP demuxer.
-    WebPDemuxDelete(demux);
 
     // Create result object.
     Napi::Object result = Napi::Object::New(env);
     result.Set("buffer", output);
     result.Set("width", width);
     result.Set("height", height);
-    result.Set(
-      "iccProfile",
-      iccProfile.IsEmpty() ? env.Undefined() : iccProfile
-    );
+    result.Set("iccProfile", iccProfile.IsEmpty() ? env.Undefined() : iccProfile);
 
     return result;
   }
