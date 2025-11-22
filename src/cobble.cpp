@@ -1,9 +1,7 @@
 #include <cmath>
-#include <csetjmp>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <string>
 
 #include <napi.h>
 #include <png.h>
@@ -38,7 +36,7 @@ public:
     return handle;
   }
 
-  std::string getError() {
+  const char* getError() {
     char* message = tj3GetErrorStr(handle);
     if (message == nullptr) {
       switch (type) {
@@ -68,17 +66,19 @@ struct JpegData {
 };
 
 // WebP demuxer wrapper with automatic destruction.
-class WebPDemuxer_ {
+class WebPDemuxerWrapper {
   WebPData data;
   WebPDemuxer* demux;
 
 public:
-  WebPDemuxer_(std::uint8_t* buffer, std::size_t size) :
+  WebPDemuxerWrapper(std::uint8_t* buffer, std::size_t size) :
     data({.bytes = buffer, .size = size}),
     demux(WebPDemux(&data)) {}
 
-  ~WebPDemuxer_() {
-    WebPDemuxDelete(demux);
+  ~WebPDemuxerWrapper() {
+    if (demux != nullptr) {
+      WebPDemuxDelete(demux);
+    }
   }
 
   tjhandle get() {
@@ -91,15 +91,15 @@ public:
 };
 
 // WebP demux chunk iterator with automatic release.
-struct WebPChunkIterator_ : public WebPChunkIterator {
-  ~WebPChunkIterator_() {
+struct WebPChunkIteratorWrapper : public WebPChunkIterator {
+  ~WebPChunkIteratorWrapper() {
     WebPDemuxReleaseChunkIterator(this);
   }
 };
 
 // WebP demux iterator with automatic release.
-struct WebPIterator_ : public WebPIterator {
-  ~WebPIterator_() {
+struct WebPIteratorWrapper : public WebPIterator {
+  ~WebPIteratorWrapper() {
     WebPDemuxReleaseIterator(this);
   }
 };
@@ -112,11 +112,66 @@ struct WebPIterator_ : public WebPIterator {
 constexpr std::uint32_t PNG_MAX_WIDTH = (2 << 15) - 1;
 constexpr std::uint32_t PNG_MAX_HEIGHT = (2 << 15) - 1;
 
+// PNG error handler that throws JavaScript exceptions.
+void pngErrorHandler(png_struct* png, const char* message) {
+  napi_env env = static_cast<napi_env>(png_get_error_ptr(png));
+  throw Napi::Error::New(env, message == nullptr ? "PNG encoding failed" : message);
+}
+
+// PNG writer wrapper that also manages other related stuff.
+class PngWriter {
+  png_struct* png;
+  png_info* info;
+
+public:
+  PngWriter(napi_env env) {
+    png = png_create_write_struct(
+      PNG_LIBPNG_VER_STRING,
+      env,
+      pngErrorHandler,
+      pngErrorHandler
+    );
+    if (png == nullptr) {
+      throw Napi::Error::New(env, "PNG encoder initialization failed");
+    }
+
+    info = png_create_info_struct(png);
+    if (info == nullptr) {
+      png_destroy_write_struct(&png, nullptr);
+      throw Napi::Error::New(env, "PNG encoder initialization failed");
+    }
+  }
+
+  ~PngWriter() {
+    png_destroy_write_struct(&png, &info);
+  }
+
+  png_struct* get() {
+    return png;
+  }
+
+  operator png_struct*() {
+    return png;
+  }
+
+  png_info* getInfo() {
+    return info;
+  }
+};
+
 // PNG data buffer.
 struct PngData {
-  std::uint8_t* buffer;
-  std::size_t size;
-  std::size_t capacity;
+  std::uint8_t* buffer = nullptr;
+  std::size_t size = 0;
+  std::size_t capacity = 0;
+
+  PngData(int capacity) : capacity(capacity) {
+    buffer = new std::uint8_t[capacity];
+  }
+
+  ~PngData() {
+    delete buffer;
+  }
 };
 
 // PNG zlib stream worst case compression estimation based on deflateBound from
@@ -314,7 +369,7 @@ public:
     Napi::Uint8Array input = typedArray.As<Napi::Uint8Array>();
 
     // Create WebP demuxer.
-    WebPDemuxer_ demux(input.Data(), input.ElementLength());
+    WebPDemuxerWrapper demux(input.Data(), input.ElementLength());
     if (demux.get() == nullptr) {
       throw Napi::Error::New(env, "WebP decoding failed");
     }
@@ -346,7 +401,7 @@ public:
     if (flags & ICCP_FLAG) {
       // Retrieve ICC profile chunk, make sure that is is the first ICC profile
       // chunk, and make sure that there are not multiple ICC profile chunks.
-      WebPChunkIterator_ chunkIter;
+      WebPChunkIteratorWrapper chunkIter;
       if (!WebPDemuxGetChunk(demux, "ICCP", 1, &chunkIter)) {
         throw Napi::Error::New(env, "ICC profile chunk disappeared");
       }
@@ -365,7 +420,7 @@ public:
     // Retrieve WebP frame, make sure that it is the first frame, make sure
     // there are not multiple frames, make sure the frame is complete, make sure
     // the frame is opaque, and sure the frame covers the entire canvas.
-    WebPIterator_ iter;
+    WebPIteratorWrapper iter;
     if (!WebPDemuxGetFrame(demux, 1, &iter)) {
       throw Napi::Error::New(env, "Impossible, frame disappeared");
     }
@@ -481,18 +536,11 @@ public:
     Napi::Uint8Array iccProfile = Napi::Uint8Array();
     if (!iccProfileValue.IsUndefined()) {
       if (!iccProfileValue.IsTypedArray()) {
-        throw Napi::TypeError::New(
-          env,
-          "Expected ICC profile to be TypedArray"
-        );
+        throw Napi::TypeError::New(env, "Expected ICC profile to be TypedArray");
       }
-      Napi::TypedArray iccProfileTypedArray =
-        iccProfileValue.As<Napi::TypedArray>();
+      Napi::TypedArray iccProfileTypedArray = iccProfileValue.As<Napi::TypedArray>();
       if (iccProfileTypedArray.TypedArrayType() != napi_uint8_array) {
-        throw Napi::TypeError::New(
-          env,
-          "Expected ICC profile to be Uint8Array"
-        );
+        throw Napi::TypeError::New(env, "Expected ICC profile to be Uint8Array");
       }
       iccProfile = iccProfileTypedArray.As<Napi::Uint8Array>();
     }
@@ -507,30 +555,8 @@ public:
       );
     }
 
-    // Set up error handling.
-    const char* errorMessage;
-    auto errorHandler = [](png_struct* png, const char* message) {
-      *static_cast<const char**>(png_get_error_ptr(png)) = message;
-      png_longjmp(png, 1);
-    };
-
     // Create PNG writer.
-    png_struct* png = png_create_write_struct(
-      PNG_LIBPNG_VER_STRING,
-      &errorMessage,
-      errorHandler,
-      errorHandler
-    );
-    if (png == nullptr) {
-      throw Napi::Error::New(env, "PNG encoder initialization failed");
-    }
-
-    // Create PNG info.
-    png_info* pngInfo = png_create_info_struct(png);
-    if (pngInfo == nullptr) {
-      png_destroy_write_struct(&png, nullptr);
-      throw Napi::Error::New(env, "PNG encoder initialization failed");
-    }
+    PngWriter png(env);
 
     // Calculate data buffer capacity.
     std::size_t dataCapacity = pngBufferSize(buffer.ElementLength());
@@ -539,21 +565,7 @@ public:
     }
 
     // Create output data buffer.
-    PngData data = {
-      .buffer = new std::uint8_t[dataCapacity],
-      .size = 0,
-      .capacity = dataCapacity,
-    };
-
-    // Initialize error handling
-    if (setjmp(png_jmpbuf(png))) {
-      png_destroy_write_struct(&png, &pngInfo);
-      delete data.buffer;
-      throw Napi::Error::New(
-        env,
-        errorMessage == nullptr ? "PNG encoding failed" : errorMessage
-      );
-    }
+    PngData data(dataCapacity);
 
     // Enable all filters and max compression level for smaller results.
     png_set_filter(png, 0, PNG_ALL_FILTERS);
@@ -561,14 +573,7 @@ public:
 
     // Increase encoding buffer size to match zlib stream worst case compression
     // to ensure there will only be one IDAT chunk.
-    png_set_compression_buffer_size(
-      png,
-      pngZlibStreamSize(buffer.ElementLength())
-    );
-
-    // TODO: Set additional options.
-    // png_set_filter(png, 0, PNG_ALL_FILTERS);
-    // png_set_compression_level(png, Z_BEST_COMPRESSION);
+    png_set_compression_buffer_size(png, pngZlibStreamSize(buffer.ElementLength()));
 
     // Configure libpng to write encoded PNG to in-memory buffer.
     png_set_write_fn(
@@ -591,7 +596,7 @@ public:
     // Set PNG image header.
     png_set_IHDR(
       png,
-      pngInfo,
+      png.getInfo(),
       width,
       height,
       8,
@@ -605,7 +610,7 @@ public:
     if (!iccProfile.IsEmpty()) {
       png_set_iCCP(
         png,
-        pngInfo,
+        png.getInfo(),
         "ICC Profile",
         PNG_COMPRESSION_TYPE_BASE,
         iccProfile.Data(),
@@ -614,7 +619,7 @@ public:
     }
 
     // Write header and ICC profile to buffer.
-    png_write_info(png, pngInfo);
+    png_write_info(png, png.getInfo());
 
     // Write each row of pixels.
     for (std::size_t i = 0; i < height; i++) {
@@ -622,17 +627,11 @@ public:
     }
 
     // Finish writing pixels to buffer.
-    png_write_end(png, pngInfo);
-
-    // Destroy PNG writer.
-    png_destroy_write_struct(&png, &pngInfo);
+    png_write_end(png, png.getInfo());
 
     // Copy encoded PNG to smaller buffer.
     Napi::Uint8Array output = Napi::Uint8Array::New(env, data.size);
     std::memcpy(output.Data(), data.buffer, data.size);
-
-    // Destroy original buffer.
-    delete data.buffer;
 
     return output;
   }
