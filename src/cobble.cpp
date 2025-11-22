@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <string>
 
 #include <napi.h>
@@ -16,6 +15,53 @@
 // can overflow on very large images despite artificial limit of 2^16-1 pixels
 // for both width and height.
 static_assert(sizeof(std::size_t) >= 8, "std::size_t must be at least 64 bits");
+
+// JPEG handle wrapper with automatic destruction.
+class JpegHandle {
+  TJINIT type;
+  tjhandle handle;
+
+public:
+  JpegHandle(TJINIT type) : type(type), handle(tj3Init(type)) {}
+
+  ~JpegHandle() {
+    tj3Destroy(handle);
+  }
+
+  tjhandle get() {
+    return handle;
+  }
+
+  operator tjhandle() {
+    return handle;
+  }
+
+  std::string getError() {
+    char* message = tj3GetErrorStr(handle);
+    if (message == nullptr) {
+      switch (type) {
+        case TJINIT_COMPRESS:
+          return "JPEG encoding failed";
+        case TJINIT_DECOMPRESS:
+          return "JPEG decoding failed";
+        case TJINIT_TRANSFORM:
+          return "JPEG transform failed";
+      }
+    }
+
+    return message;
+  }
+};
+
+// JPEG data buffer.
+struct JpegData {
+  std::uint8_t* buffer;
+  std::size_t size;
+
+  ~JpegData() {
+    tj3Free(buffer);
+  }
+};
 
 // Maximum dimensions are is restricted to 2^16-1 for both width and height.
 // This is because encodePng should only ever be used for encoding decoded JPEG
@@ -101,126 +147,82 @@ public:
     Napi::Uint8Array input = typedArray.As<Napi::Uint8Array>();
 
     // Create TurboJPEG instance.
-    tjhandle handle = tj3Init(TJINIT_DECOMPRESS);
-    if (handle == nullptr) {
-      char* message = tj3GetErrorStr(handle);
-      throw Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
+    JpegHandle handle(TJINIT_DECOMPRESS);
+    if (handle.get() == nullptr) {
+      throw Napi::Error::New(env, handle.getError());
     }
 
     // Treat decoding warning as fatal error.
     if (tj3Set(handle, TJPARAM_STOPONWARNING, true) < 0) {
-      char* message = tj3GetErrorStr(handle);
-      Napi::Error error = Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
-      tj3Destroy(handle);
-      throw error;
+      throw Napi::Error::New(env, handle.getError());
     }
 
     // Do not decode additional metadata except for the ICC profile.
     if (tj3Set(handle, TJPARAM_SAVEMARKERS, 4) < 0) {
-      char* message = tj3GetErrorStr(handle);
-      Napi::Error error = Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
-      tj3Destroy(handle);
-      throw error;
+      throw Napi::Error::New(env, handle.getError());
     }
 
     // Decode JPEG header for metadata.
     if (tj3DecompressHeader(handle, input.Data(), input.ElementLength()) < 0) {
-      char* message = tj3GetErrorStr(handle);
-      Napi::Error error = Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
-      tj3Destroy(handle);
-      throw error;
+      throw Napi::Error::New(env, handle.getError());
     }
 
     // Retrieve JPEG width.
     int width = tj3Get(handle, TJPARAM_JPEGWIDTH);
     if (width < 0) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "JPEG width is unknown");
     }
 
     // Retrieve JPEG height.
     int height = tj3Get(handle, TJPARAM_JPEGHEIGHT);
     if (height < 0) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "JPEG height is unknown");
     }
 
     // Make sure JPEG has 8-bit data precision.
     int precision = tj3Get(handle, TJPARAM_PRECISION);
     if (precision < 0) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "JPEG data precision is unknown");
     }
     if (precision != 8) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "Only 8 bit data precision is supported");
     }
 
     // Make sure JPEG has RGB or YCbCr color space.
     int rawColorSpace = tj3Get(handle, TJPARAM_COLORSPACE);
     if (rawColorSpace < 0) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "JPEG color space is unknown");
     }
     TJCS colorSpace = static_cast<TJCS>(rawColorSpace);
     if (colorSpace != TJCS_RGB && colorSpace != TJCS_YCbCr) {
-      tj3Destroy(handle);
-      throw Napi::Error::New(
-        env,
-        "Only RGB and YCbCr color spaces are supported"
-      );
+      throw Napi::Error::New(env, "Only RGB and YCbCr color spaces are supported");
     }
 
     // Make sure JPEG is lossy.
     int rawLossless = tj3Get(handle, TJPARAM_LOSSLESS);
     if (rawLossless < 0) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "JPEG compression algorithm is unknown");
     }
     bool lossless = rawLossless;
     if (lossless) {
-      tj3Destroy(handle);
       throw Napi::Error::New(env, "Only lossy compression is supported");
     }
 
     // Warnings are ignored when retrieving the ICC profile since no profile
     // emits a warning, and we want to support images with no ICC profile.
-    std::uint8_t* rawIccProfile = nullptr;
-    std::size_t iccProfileSize = 0;
+    JpegData rawIccProfile;
     if (
-      tj3GetICCProfile(handle, &rawIccProfile, &iccProfileSize) < 0 &&
+      tj3GetICCProfile(handle, &rawIccProfile.buffer, &rawIccProfile.size) < 0 &&
       tj3GetErrorCode(handle) != TJERR_WARNING
     ) {
-      char* message = tj3GetErrorStr(handle);
-      Napi::Error error = Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
-      tj3Destroy(handle);
-      throw error;
+      throw Napi::Error::New(env, handle.getError());
     }
 
     // Copy ICC profile to buffer if available.
     Napi::Uint8Array iccProfile = Napi::Uint8Array();
-    if (rawIccProfile != nullptr) {
-      if (iccProfileSize > 0) {
-        iccProfile = Napi::Uint8Array::New(env, iccProfileSize);
-        std::memcpy(iccProfile.Data(), rawIccProfile, iccProfileSize);
-      }
-
-      tj3Free(rawIccProfile);
+    if (rawIccProfile.size > 0) {
+      iccProfile = Napi::Uint8Array::New(env, rawIccProfile.size);
+      std::memcpy(iccProfile.Data(), rawIccProfile.buffer, rawIccProfile.size);
     }
 
     // Allocate output buffer for 8 bit data precision RGB JPEG. Cast is needed
@@ -241,27 +243,15 @@ public:
         TJPF_RGB
       ) < 0
     ) {
-      char* message = tj3GetErrorStr(handle);
-      Napi::Error error = Napi::Error::New(
-        env,
-        message == nullptr ? "JPEG decoding failed" : message
-      );
-      tj3Destroy(handle);
-      throw error;
+      throw Napi::Error::New(env, handle.getError());
     }
-
-    // Destroy TurboJPEG instance.
-    tj3Destroy(handle);
 
     // Create result object.
     Napi::Object result = Napi::Object::New(env);
     result.Set("buffer", output);
     result.Set("width", width);
     result.Set("height", height);
-    result.Set(
-      "iccProfile",
-      iccProfile.IsEmpty() ? env.Undefined() : iccProfile
-    );
+    result.Set("iccProfile", iccProfile.IsEmpty() ? env.Undefined() : iccProfile);
 
     return result;
   }
