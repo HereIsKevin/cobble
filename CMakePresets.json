@@ -2,14 +2,25 @@
   "version": 10,
   "cmakeMinimumRequired": {
     "major": 4,
-    "minor": 1
+    "minor": 0
   },
   "configurePresets": [
+    {
+      "name": "deps",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/",
+      "cacheVariables": {
+        "BUILD_DEPS": true,
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+      }
+    },
     {
       "name": "debug",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
+        "BUILD_DEPS": false,
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
@@ -19,9 +30,38 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
+        "BUILD_DEPS": false,
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
       }
+    }
+  ],
+  "buildPresets": [
+    { "name": "deps", "configurePreset": "deps" },
+    { "name": "debug", "configurePreset": "debug" },
+    { "name": "release", "configurePreset": "release" }
+  ],
+  "workflowPresets": [
+    {
+      "name": "deps",
+      "steps": [
+        { "type": "configure", "name": "deps" },
+        { "type": "build", "name": "deps" }
+      ]
+    },
+    {
+      "name": "debug",
+      "steps": [
+        { "type": "configure", "name": "debug" },
+        { "type": "build", "name": "debug" }
+      ]
+    },
+    {
+      "name": "release",
+      "steps": [
+        { "type": "configure", "name": "release" },
+        { "type": "build", "name": "release" }
+      ]
     }
   ]
 }

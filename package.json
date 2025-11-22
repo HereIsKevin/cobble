@@ -1,8 +1,22 @@
 {
+  "name": "cobble",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Rearrange images by blitting.",
+  "repository": "HereIsKevin/cobble",
+  "license": "UNLICENSED",
+  "author": "Kevin Feng",
   "type": "module",
+  "exports": "./index.js",
+  "scripts": {
+    "build": "cmake --workflow debug",
+    "build:release": "cmake --workflow release",
+    "install:deps": "cmake --workflow deps"
+  },
   "devDependencies": {
-    "@types/node": "^24.10.0",
+    "@types/node": "^24.10.1",
     "node-addon-api": "^8.5.0",
     "node-api-headers": "^1.6.0"
-  }
+  },
+  "packageManager": "pnpm@10.23.0"
 }
