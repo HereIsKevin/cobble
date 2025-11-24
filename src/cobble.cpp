@@ -81,7 +81,7 @@ public:
     }
   }
 
-  tjhandle get() {
+  WebPDemuxer* get() {
     return demux;
   }
 
@@ -174,8 +174,7 @@ struct PngData {
   }
 };
 
-// PNG zlib stream worst case compression estimation based on deflateBound from
-// zlib.
+// PNG zlib stream worst case compression estimation.
 constexpr std::size_t pngZlibStreamSize(std::size_t size) {
   // PNG zlib streams have a worst case compression of 2 byte compression
   // headers and flags + uncompressed data size + 5 bytes for each 32 kilobyte
@@ -187,6 +186,7 @@ constexpr std::size_t pngZlibStreamSize(std::size_t size) {
   // std::size_t checksum = 4;
   // return headerAndFlags + size + (5 * chunks) + checksum;
 
+  // This is based on deflateBound from zlib.
   return size + ((size + 7) >> 3) + ((size + 63) >> 6) + 5 + 6;
 }
 
