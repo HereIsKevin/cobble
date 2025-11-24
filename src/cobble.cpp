@@ -165,7 +165,7 @@ struct PngData {
   std::size_t size = 0;
   std::size_t capacity = 0;
 
-  PngData(int capacity) : capacity(capacity) {
+  PngData(std::size_t capacity) : capacity(capacity) {
     buffer = new std::uint8_t[capacity];
   }
 
@@ -315,7 +315,7 @@ public:
     }
 
     // Copy ICC profile to buffer if available.
-    Napi::Uint8Array iccProfile = Napi::Uint8Array();
+    Napi::Uint8Array iccProfile;
     if (rawIccProfile.size > 0) {
       iccProfile = Napi::Uint8Array::New(env, rawIccProfile.size);
       std::memcpy(iccProfile.Data(), rawIccProfile.buffer, rawIccProfile.size);
@@ -397,7 +397,7 @@ public:
     }
 
     // Retrieve ICC profile if available.
-    Napi::Uint8Array iccProfile = Napi::Uint8Array();
+    Napi::Uint8Array iccProfile;
     if (flags & ICCP_FLAG) {
       // Retrieve ICC profile chunk, make sure that is is the first ICC profile
       // chunk, and make sure that there are not multiple ICC profile chunks.
@@ -533,7 +533,7 @@ public:
 
     // Validate ICC profile buffer.
     Napi::Value iccProfileValue = image.Get("iccProfile");
-    Napi::Uint8Array iccProfile = Napi::Uint8Array();
+    Napi::Uint8Array iccProfile;
     if (!iccProfileValue.IsUndefined()) {
       if (!iccProfileValue.IsTypedArray()) {
         throw Napi::TypeError::New(env, "Expected ICC profile to be TypedArray");
@@ -584,7 +584,6 @@ public:
 
         if (pngData->size + size > pngData->capacity) {
           png_error(png, "Impossible, PNG output data buffer is too small");
-          return;
         }
 
         std::memcpy(pngData->buffer + pngData->size, data, size);
