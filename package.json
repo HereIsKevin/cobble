@@ -16,7 +16,7 @@
   "devDependencies": {
     "@types/node": "^24.10.1",
     "node-addon-api": "^8.5.0",
-    "node-api-headers": "^1.6.0"
+    "node-api-headers": "^1.7.0"
   },
-  "packageManager": "pnpm@10.23.0"
+  "packageManager": "pnpm@10.24.0"
 }

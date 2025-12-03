@@ -28,8 +28,8 @@ if(BUILD_DEPS)
 
   ExternalPackage_Add(
     PNG
-    URL https://download.sourceforge.net/libpng/libpng-1.6.50.tar.gz
-    HASH 708f4398f996325819936d447f982e0db90b6b8212b7507e7672ea232210949a
+    URL https://download.sourceforge.net/libpng/libpng-1.6.52.tar.gz
+    HASH 86d4a88be1c8bc903674199f1d067a9ac940af4e4399caba0314e7a1bcaa0724
     CMAKE_ARGS
       -D PNG_ARM_NEON=on
       -D PNG_FRAMEWORK=FALSE
