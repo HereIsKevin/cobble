@@ -1,0 +1,50 @@
+name: Build addon binaries
+run-name: Build addon binaries for macOS ARM64
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    name: Build addon binaries
+    runs-on: macos-15
+    steps:
+      - name: Clone repository master branch
+        uses: actions/checkout@v6
+        with:
+          path: ./cobble/
+
+      - name: Clone repository binaries branch
+        uses: actions/checkout@v6
+        with:
+          ref: binaries
+          path: ./cobble-binaries/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ./cobble/package.json
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: ./cobble/package.json
+
+      - name: Build addon for master branch
+        run: |
+          pnpm install
+          git rev-parse master > REF
+          pnpm pack --out ./cobble.tar.gz
+          tar --extract --file ./cobble.tar.gz --directory ../cobble-binaries/
+        working-directory: ./cobble/
+
+      - name: Commit addon to binaries branch
+        run: |
+          git config --global user.name "Kevin Feng"
+          git config --global user.email "49735863+HereIsKevin@users.noreply.github.com"
+          git add --all
+          git commit --message "Updated macOS ARM64 binaries" || true
+          git push
+        working-directory: ./cobble-binaries/

@@ -14,7 +14,7 @@
     "clean": "node ./scripts/clean.js",
     "format": "prettier --write ./index.ts \"./*.json\" \"./scripts/*.js\"",
     "install:deps": "cmake --workflow deps",
-    "prepack": "pnpm run clean && pnpm run install:deps && pnpm build:release && node ./scripts/copy.js"
+    "prepack": "pnpm clean && pnpm install:deps && pnpm build:release && node ./scripts/copy.js"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
@@ -24,5 +24,8 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.24.0"
+  "packageManager": "pnpm@10.24.0",
+  "engines": {
+    "node": ">=25.0.0"
+  }
 }
