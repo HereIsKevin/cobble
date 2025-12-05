@@ -2,21 +2,28 @@
   "name": "cobble",
   "version": "0.1.0",
   "private": true,
-  "description": "Rearrange images by blitting.",
+  "description": "Rearrange images by cobbling pieces together.",
   "repository": "HereIsKevin/cobble",
   "license": "UNLICENSED",
   "author": "Kevin Feng",
   "type": "module",
   "exports": "./index.js",
   "scripts": {
-    "build": "cmake --workflow debug",
-    "build:release": "cmake --workflow release",
-    "install:deps": "cmake --workflow deps"
+    "build": "pnpm run build:addon && pnpm run build:wrapper",
+    "build:addon": "cmake --workflow debug",
+    "build:wrapper": "tsc",
+    "clean": "node ./scripts/clean.js",
+    "format": "prettier --write ./index.ts \"./*.json\" \"./scripts/*.js\"",
+    "install:addon": "cmake --workflow deps",
+    "prepack": "pnpm run clean && pnpm run install:addon && pnpm run build && node ./scripts/copy.js"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
     "node-addon-api": "^8.5.0",
-    "node-api-headers": "^1.7.0"
+    "node-api-headers": "^1.7.0",
+    "prettier": "^3.7.4",
+    "prettier-plugin-organize-imports": "^4.3.0",
+    "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.24.0"
 }

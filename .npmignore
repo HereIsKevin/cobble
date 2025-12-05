@@ -1,0 +1,17 @@
+.cache/
+build/
+cmake/
+scripts/
+src/
+
+index.ts
+
+.prettierrc
+CMakeLists.txt
+CMakePresets.json
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.json
+
+*.sublime-project
+*.sublime-workspace

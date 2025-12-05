@@ -1,4 +1,10 @@
 .cache/
 build/
-dist/
 node_modules/
+
+cobble*.node
+index.*
+!index.ts
+
+*.sublime-project
+*.sublime-workspace
