@@ -9,13 +9,12 @@
   "type": "module",
   "exports": "./index.js",
   "scripts": {
-    "build": "pnpm run build:addon && pnpm run build:wrapper",
-    "build:addon": "cmake --workflow debug",
-    "build:wrapper": "tsc",
+    "build": "cmake --workflow debug && tsc",
+    "build:release": "cmake --workflow release && tsc",
     "clean": "node ./scripts/clean.js",
     "format": "prettier --write ./index.ts \"./*.json\" \"./scripts/*.js\"",
-    "install:addon": "cmake --workflow deps",
-    "prepack": "pnpm run clean && pnpm run install:addon && pnpm run build && node ./scripts/copy.js"
+    "install:deps": "cmake --workflow deps",
+    "prepack": "pnpm run clean && pnpm run install:deps && pnpm build:release && node ./scripts/copy.js"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
