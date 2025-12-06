@@ -103,11 +103,11 @@ const checkPiece = (piece: Piece, image: Image): void => {
 
 export class Cobbler {
   #image: Image;
-  #pixels: Uint8Array;
+  #buffer: Uint8Array;
 
   private constructor(image: Image) {
     this.#image = image;
-    this.#pixels = new Uint8Array(image.width * image.height * 3);
+    this.#buffer = new Uint8Array(image.width * image.height * 3);
   }
 
   static async decode(imageData: Uint8Array): Promise<Cobbler> {
@@ -149,7 +149,7 @@ export class Cobbler {
       throw new Error("Pieces must have same dimensions");
     }
 
-    for (let row = 0; row < 0 + from.height; row++) {
+    for (let row = 0; row < from.height; row++) {
       const fromRow = from.top + row;
       const fromStart = fromRow * this.#image.width + from.left;
       const fromEnd = fromStart + from.width;
@@ -157,7 +157,7 @@ export class Cobbler {
       const toRow = to.top + row;
       const toStart = toRow * this.#image.width + to.left;
 
-      this.#pixels.set(
+      this.#buffer.set(
         this.#image.buffer.subarray(fromStart * 3, fromEnd * 3),
         toStart * 3,
       );
@@ -165,6 +165,11 @@ export class Cobbler {
   }
 
   encode(): Promise<Uint8Array> {
-    return addon.encodePng(this.#image);
+    return addon.encodePng({
+      width: this.#image.width,
+      height: this.#image.height,
+      buffer: this.#buffer,
+      iccProfile: this.#image.iccProfile,
+    });
   }
 }

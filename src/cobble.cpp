@@ -519,11 +519,11 @@ protected:
     }
 
     // Allocate output buffer for encoded PNG.
-    outputSize = BufferSize(inputSize);
+    outputCapacity = BufferSize(inputSize);
     if (iccProfileSize > 0) {
-      outputSize += IccProfileChunkSize(iccProfileSize);
+      outputCapacity += IccProfileChunkSize(iccProfileSize);
     }
-    outputBuffer = new std::uint8_t[outputSize];
+    outputBuffer = new std::uint8_t[outputCapacity];
 
     // Enable all filters and max compression level for smaller results.
     png_set_filter(png, 0, PNG_ALL_FILTERS);
@@ -531,7 +531,7 @@ protected:
 
     // Increase encoding buffer size to match zlib stream worst case compression
     // to ensure there will only be one IDAT chunk.
-    png_set_compression_buffer_size(png, ZlibStreamSize(outputSize));
+    png_set_compression_buffer_size(png, ZlibStreamSize(inputSize));
 
     // Configure libpng to write encoded PNG to buffer instead of file.
     png_set_write_fn(png, this, WriteHandler, nullptr);
@@ -566,7 +566,7 @@ protected:
 
     // Write each row of pixels.
     for (std::size_t row = 0; row < height; row++) {
-      png_write_row(png, outputBuffer + (row * width * 3));
+      png_write_row(png, inputBuffer + (row * width * 3));
     }
 
     // Finish writing pixels to buffer.
