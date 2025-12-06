@@ -1,52 +1,36 @@
-name: Build addon binaries
-run-name: Build addon binaries for macOS ARM64
+name: Build and publish addon binaries
+run-name: Build and publish addon binaries for macOS ARM64
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  packages: write
 
 jobs:
   build:
-    name: Build addon binaries
+    name: Build and publish addon binaries
     runs-on: macos-15
     steps:
-      - name: Clone repository master branch
+      - name: Clone repository
         uses: actions/checkout@v6
-        with:
-          path: ./cobble/
-
-      - name: Clone repository binaries branch
-        uses: actions/checkout@v6
-        with:
-          ref: binaries
-          path: ./cobble-binaries/
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version-file: ./cobble/package.json
+          node-version-file: ./package.json
+          registry-url: https://npm.pkg.github.com
+          scope: "@hereiskevin"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          package_json_file: ./cobble/package.json
+          package_json_file: ./package.json
 
       - name: Build addon for master branch
         run: |
-          pnpm install
-          pnpm pack --out ./cobble.tar.gz
-          tar --extract --file ./cobble.tar.gz --directory ../cobble-binaries/ --strip-components 1
-        working-directory: ./cobble/
-
-      - name: Commit addon to binaries branch
-        run: |
-          git config --global user.name "Kevin Feng"
-          git config --global user.email "49735863+HereIsKevin@users.noreply.github.com"
-          git add ./
-          git commit --message "Updated macOS ARM64 binaries" --message "Built from $(git --git-dir ../cobble/.git/ rev-parse master)." || true
-          git push
-        working-directory: ./cobble-binaries/
+          pnpm install --frozen-lockfile
+          pnpm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
