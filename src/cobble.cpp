@@ -522,6 +522,8 @@ protected:
     outputCapacity = BufferSize(inputSize);
     if (iccProfileSize > 0) {
       outputCapacity += IccProfileChunkSize(iccProfileSize);
+    } else {
+      outputCapacity += SrgbChunkSize();
     }
     outputBuffer = new std::uint8_t[outputCapacity];
 
@@ -559,6 +561,10 @@ protected:
         iccProfileBuffer,
         iccProfileSize
       );
+    }
+    // Otherwise mark PNG as sRGB, a very sensible default.
+    else {
+      png_set_sRGB(png, pngInfo, PNG_sRGB_INTENT_PERCEPTUAL);
     }
 
     // Write header and ICC profile to buffer.
@@ -639,6 +645,11 @@ private:
     // PNG ICC profile chunks have a worst case compression of 93 byte header +
     // zlib stream size.
     return ChunkSize(81 + ZlibStreamSize(size));
+  }
+
+  static std::size_t SrgbChunkSize() {
+    // Only value in a sRGB chunk is rendering intent, which is 1 byte.
+    return ChunkSize(1);
   }
 
   static std::size_t BufferSize(std::size_t size) {
