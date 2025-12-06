@@ -1,5 +1,5 @@
 {
-  "files": ["./index.ts"],
+  "files": ["./scripts/clean.ts", "./scripts/copy.ts", "./index.ts"],
   "compilerOptions": {
     // Type Checking
     "exactOptionalPropertyTypes": true,
@@ -20,6 +20,7 @@
     // Emit
     "declaration": true,
     "declarationMap": true,
+    "noEmit": true,
     "sourceMap": true,
 
     // Interop Constraints
