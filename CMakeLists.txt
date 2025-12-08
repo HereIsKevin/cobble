@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 4.0)
 
+project(cobble)
+
+set(SUPPORTED_PLATFORMS Darwin Linux)
+if(NOT CMAKE_SYSTEM_NAME IN_LIST SUPPORTED_PLATFORMS)
+  message(WARNING "Platform \"${CMAKE_SYSTEM_NAME}\" is unsupported")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS FALSE)
-set(CMAKE_OSX_ARCHITECTURES arm64)
-set(CMAKE_OSX_DEPLOYMENT_TARGET 13.5)
 
-project(cobble)
+if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+  set(CMAKE_OSX_ARCHITECTURES arm64)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 13.5)
+endif()
 
 include(./cmake/ExternalPackage.cmake)
 include(./cmake/NodeModule.cmake)
@@ -19,25 +27,40 @@ if(BUILD_DEPS)
     CMAKE_ARGS
       -D ENABLE_SHARED=TRUE
       -D ENABLE_STATIC=TRUE
-      -D NEON_INTRINSICS=TRUE
       -D WITH_SIMD=TRUE
       -D WITH_TESTS=TRUE
       -D WITH_TURBOJPEG=TRUE
     TEST
   )
 
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    ExternalPackage_Add(
+      ZLIB
+      URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
+      HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+      TEST
+      EXPORT ZLIB_DIR
+    )
+
+    set(
+      PNG_CMAKE_ARGS
+      -D "ZLIB_ROOT=${ZLIB_DIR}"
+      -D ZLIB_USE_STATIC_LIBS=TRUE
+    )
+  endif()
+
   ExternalPackage_Add(
     PNG
     URL https://download.sourceforge.net/libpng/libpng-1.6.53.tar.gz
     HASH da0b045cbb1d06a8fc9696f9441359f70645f280ff24ae453ccb7c722353654f
     CMAKE_ARGS
-      -D PNG_ARM_NEON=on
       -D PNG_FRAMEWORK=FALSE
       -D PNG_HARDWARE_OPTIMIZATIONS=TRUE
       -D PNG_SHARED=TRUE
       -D PNG_STATIC=TRUE
       -D PNG_TESTS=TRUE
       -D PNG_TOOLS=FALSE
+      ${PNG_CMAKE_ARGS}
     TEST
   )
 
@@ -73,8 +96,13 @@ NodeModule_Find(node-api-headers)
 
 add_library(cobble MODULE)
 target_sources(cobble PRIVATE ./src/cobble.cpp)
+
 target_compile_options(cobble PRIVATE -Wall -Wextra -Wpedantic)
-target_link_options(cobble PRIVATE -undefined dynamic_lookup)
+
+if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+  target_link_options(cobble PRIVATE -undefined dynamic_lookup)
+endif()
+
 set_target_properties(
   cobble
   PROPERTIES

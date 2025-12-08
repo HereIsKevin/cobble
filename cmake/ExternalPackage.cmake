@@ -8,7 +8,7 @@ if(NOT DEFINED EXTERNAL_PACKAGE_PARALLEL_LEVEL)
 endif()
 
 function(ExternalPackage_Add name)
-  cmake_parse_arguments(PARSE_ARGV 1 arg "TEST" "URL;HASH" "CMAKE_ARGS")
+  cmake_parse_arguments(PARSE_ARGV 1 arg "TEST" "URL;HASH;EXPORT" "CMAKE_ARGS")
 
   if(arg_TEST)
     set(
@@ -40,6 +40,12 @@ function(ExternalPackage_Add name)
 
   list(APPEND _EXTERNAL_PROJECT_TARGETS "${name}")
   set(_EXTERNAL_PROJECT_TARGETS ${_EXTERNAL_PROJECT_TARGETS} PARENT_SCOPE)
+
+  if(arg_EXPORT)
+    ExternalProject_Get_Property("${name}" INSTALL_DIR)
+    set("${arg_EXPORT}" "${INSTALL_DIR}")
+    return(PROPAGATE "${arg_EXPORT}")
+  endif()
 endfunction()
 
 function(ExternalPackage_Find name)
