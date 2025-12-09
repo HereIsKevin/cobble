@@ -590,7 +590,10 @@ protected:
   }
 
 private:
-  static void ErrorHandler(png_struct* _, const char* message) {
+  static void ErrorHandler(
+    [[maybe_unused]] png_struct* png,
+    const char* message
+  ) {
     if (message == nullptr) {
       message = "PNG encoding failed";
     }
@@ -668,7 +671,7 @@ private:
 
 class Cobble : public Napi::Addon<Cobble> {
 public:
-  Cobble(Napi::Env _, Napi::Object exports) {
+  Cobble([[maybe_unused]] Napi::Env env, Napi::Object exports) {
     DefineAddon(exports, {
       InstanceMethod("decodeJpeg", &Cobble::DecodeJpeg),
       InstanceMethod("decodeWebP", &Cobble::DecodeWebP),
