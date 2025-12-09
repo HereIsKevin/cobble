@@ -14,7 +14,7 @@ const spawnOptions = {
   stdio: "inherit",
 } as const;
 
-spawnSync("cmake", ["--workflow", "deps"], spawnOptions);
-spawnSync("cmake", ["--workflow", "release"], spawnOptions);
+spawnSync("cmake", ["--workflow", "--preset", "deps"], spawnOptions);
+spawnSync("cmake", ["--workflow", "--preset", "release"], spawnOptions);
 spawnSync("tsc", ["--project", "./tsconfig.build.json"], spawnOptions);
 await fs.copyFile(addonSrc, addonDest);

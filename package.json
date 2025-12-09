@@ -8,12 +8,12 @@
   "type": "module",
   "exports": "./index.js",
   "scripts": {
-    "build": "cmake --workflow debug",
-    "build:release": "cmake --workflow release",
+    "build": "cmake --workflow --preset debug",
+    "build:release": "cmake --workflow --preset release",
     "build:wrapper": "tsc --project ./tsconfig.build.json",
     "clean": "node ./scripts/clean.ts",
     "format": "prettier --write ./index.ts \"./*.json\" \"./scripts/*.ts\"",
-    "install:deps": "cmake --workflow deps",
+    "install:deps": "cmake --workflow --preset deps",
     "prepack": "node ./scripts/prepack.ts"
   },
   "devDependencies": {
@@ -26,6 +26,6 @@
   },
   "packageManager": "pnpm@10.25.0",
   "engines": {
-    "node": ">=25.0.0"
+    "node": ">=24.0.0"
   }
 }
