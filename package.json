@@ -8,13 +8,13 @@
   "type": "module",
   "exports": "./index.js",
   "scripts": {
-    "build": "cmake --workflow debug && pnpm build:wrapper",
-    "build:release": "cmake --workflow release && pnpm build:wrapper",
+    "build": "cmake --workflow debug",
+    "build:release": "cmake --workflow release",
     "build:wrapper": "tsc --project ./tsconfig.build.json",
     "clean": "node ./scripts/clean.ts",
     "format": "prettier --write ./index.ts \"./*.json\" \"./scripts/*.ts\"",
     "install:deps": "cmake --workflow deps",
-    "prepack": "pnpm clean && pnpm install:deps && pnpm build:release && node ./scripts/copy.ts"
+    "prepack": "node ./scripts/prepack.ts"
   },
   "devDependencies": {
     "@types/node": "^24.10.2",

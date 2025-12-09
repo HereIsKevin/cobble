@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
@@ -8,4 +9,12 @@ const addonDest = path.join(
   `cobble-${process.platform}-${process.arch}.node`,
 );
 
+const spawnOptions = {
+  cwd: baseDir,
+  stdio: "inherit",
+} as const;
+
+spawnSync("cmake", ["--workflow", "deps"], spawnOptions);
+spawnSync("cmake", ["--workflow", "release"], spawnOptions);
+spawnSync("tsc", ["--project", "./tsconfig.build.json"], spawnOptions);
 await fs.copyFile(addonSrc, addonDest);
