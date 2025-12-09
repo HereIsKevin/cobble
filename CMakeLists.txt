@@ -39,12 +39,13 @@ if(BUILD_DEPS)
       URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
       HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
       TEST
-      EXPORT ZLIB_DIR
     )
+
+    ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
 
     set(
       PNG_CMAKE_ARGS
-      -D "ZLIB_ROOT=${ZLIB_DIR}"
+      -D "ZLIB_ROOT=${ZLIB_ROOT}"
       -D ZLIB_USE_STATIC_LIBS=TRUE
     )
   endif()
