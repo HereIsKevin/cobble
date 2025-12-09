@@ -20,6 +20,22 @@ include(./cmake/ExternalPackage.cmake)
 include(./cmake/NodeModule.cmake)
 
 if(BUILD_DEPS)
+  if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+    ExternalPackage_Add(
+      ZLIB
+      URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
+      HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+      TEST
+    )
+
+    ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
+    set(
+      PNG_CMAKE_ARGS
+      -D "ZLIB_ROOT=${ZLIB_ROOT}"
+      -D ZLIB_USE_STATIC_LIBS=TRUE
+    )
+  endif()
+
   ExternalPackage_Add(
     libjpeg-turbo
     URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.2/libjpeg-turbo-3.1.2.tar.gz
@@ -32,23 +48,6 @@ if(BUILD_DEPS)
       -D WITH_TURBOJPEG=TRUE
     TEST
   )
-
-  if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    ExternalPackage_Add(
-      ZLIB
-      URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
-      HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
-      TEST
-    )
-
-    ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
-
-    set(
-      PNG_CMAKE_ARGS
-      -D "ZLIB_ROOT=${ZLIB_ROOT}"
-      -D ZLIB_USE_STATIC_LIBS=TRUE
-    )
-  endif()
 
   ExternalPackage_Add(
     PNG
@@ -87,6 +86,11 @@ if(BUILD_DEPS)
   )
 
   return()
+endif()
+
+if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+  ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
+  set(ZLIB_USE_STATIC_LIBS TRUE)
 endif()
 
 ExternalPackage_Find(libjpeg-turbo)
