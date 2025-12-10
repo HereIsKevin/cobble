@@ -91,7 +91,7 @@ jobs:
           registry-url: https://npm.pkg.github.com
           scope: "@hereiskevin"
 
-      - name: Build wrapper
+      - name: Build wrapper and publish package
         run: |
           corepack enable
           corepack install
