@@ -1,8 +1,10 @@
-FROM redhat/ubi8:8.10 AS build
+FROM rockylinux/rockylinux:8 AS build
 
 # Install dependencies.
-RUN dnf module enable --assumeyes nodejs:24 && \
-    dnf install --assumeyes cmake gcc-toolset-15 ninja-build nodejs
+RUN dnf install --assumeyes dnf-plugins-core && \
+    dnf config-manager --set-enabled powertools && \
+    dnf module enable --assumeyes nodejs:24 && \
+    dnf install --assumeyes cmake gcc-toolset-15 nasm ninja-build nodejs
 
 # Copy context to container.
 WORKDIR /root/
