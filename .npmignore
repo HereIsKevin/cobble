@@ -10,8 +10,10 @@ index.ts
 .prettierrc
 CMakeLists.txt
 CMakePresets.json
+Dockerfile
 pnpm-lock.yaml
 pnpm-workspace.yaml
+tsconfig.build.json
 tsconfig.json
 
 *.sublime-project
