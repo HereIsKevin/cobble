@@ -1,4 +1,4 @@
-FROM rockylinux/rockylinux:8 AS build
+FROM almalinux:8 AS build
 
 # Install dependencies.
 RUN dnf install --assumeyes dnf-plugins-core && \
