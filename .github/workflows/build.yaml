@@ -97,6 +97,6 @@ jobs:
           corepack install
           pnpm install --frozen-lockfile
           pnpm build:wrapper
-          pnpm publish --ignore-scripts
+          pnpm publish --ignore-scripts --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
