@@ -10,7 +10,7 @@ RUN dnf install --assumeyes dnf-plugins-core && \
 WORKDIR /root/
 COPY ./ ./cobble/
 
-# Build addon binary
+# Build addon.
 WORKDIR /root/cobble/
 RUN source /opt/rh/gcc-toolset-15/enable && \
     npm install --global corepack@latest && \
@@ -20,7 +20,7 @@ RUN source /opt/rh/gcc-toolset-15/enable && \
     pnpm prepack && \
     strip ./cobble-linux-x64.node
 
-# Copy addon binary to blank stage for export.
+# Copy addon to blank stage for export.
 FROM scratch
 ARG node_version
 COPY --from=build /root/cobble/cobble-linux-x64.node /
