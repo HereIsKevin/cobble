@@ -1,5 +1,5 @@
 {
-  "files": ["./scripts/clean.ts", "./scripts/copy.ts", "./index.ts"],
+  "files": ["./scripts/clean.ts", "./scripts/prepack.ts", "./index.ts"],
   "compilerOptions": {
     // Type Checking
     "exactOptionalPropertyTypes": true,
