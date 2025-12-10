@@ -30,7 +30,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: cobble-linux-x64.node
+          name: cobble-${{ github.ref_name }}-linux-x64
           path: ./cobble-linux-x64.node
 
   build_macos:
@@ -61,7 +61,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v5
         with:
-          name: cobble-darwin-arm64.node
+          name: cobble-${{ github.ref_name }}-darwin-arm64
           path: ./cobble-darwin-arm64.node
 
   publish:
@@ -81,7 +81,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           path: ./
-          pattern: cobble*.node
+          pattern: cobble-${{ github.ref_name }}-*
           merge-multiple: true
 
       - name: Set up Node.js
