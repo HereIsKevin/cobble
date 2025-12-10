@@ -39,14 +39,15 @@ if (isSea()) {
   const digest = createHash("sha256").update(content).digest("hex");
 
   const tempDir = path.join(os.tmpdir(), "seal");
-  const addonPath = path.join(tempDir, `${digest}.node`);
+  const tempAddonPath = path.join(tempDir, `${digest}.node`);
 
-  if (!fs.existsSync(addonPath)) {
+  if (!fs.existsSync(tempAddonPath)) {
     fs.mkdirSync(tempDir, { recursive: true });
-    fs.writeFileSync(addonPath, content);
+    fs.writeFileSync(tempAddonPath, content);
   }
 
-  addon = require(addonPath);
+  addon = require(tempAddonPath);
+  addonPath = tempAddonPath;
 }
 // Normal loading is just simple require calls. Try to load the current
 // development build, then fall back to the production build.
