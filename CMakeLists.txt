@@ -38,8 +38,8 @@ if(BUILD_DEPS)
 
   ExternalPackage_Add(
     libjpeg-turbo
-    URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.2/libjpeg-turbo-3.1.2.tar.gz
-    HASH 8f0012234b464ce50890c490f18194f913a7b1f4e6a03d6644179fa0f867d0cf
+    URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.3/libjpeg-turbo-3.1.3.tar.gz
+    HASH 075920b826834ac4ddf97661cc73491047855859affd671d52079c6867c1c6c0
     CMAKE_ARGS
       -D ENABLE_SHARED=TRUE
       -D ENABLE_STATIC=TRUE
