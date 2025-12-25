@@ -19,10 +19,17 @@ function(ExternalPackage_Add name)
     )
   endif()
 
-  if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    set(
-      darwin_args
-      -D "CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}"
+  if(CMAKE_BUILD_TYPE)
+    list(APPEND cmake_args -D CMAKE_BUILD_TYPE=Release)
+  endif()
+
+  if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    list(APPEND cmake_args -D CMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE)
+  endif()
+
+  if(DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
+    list(
+      APPEND cmake_args
       -D "CMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}"
     )
   endif()
@@ -35,11 +42,9 @@ function(ExternalPackage_Add name)
     DOWNLOAD_NO_PROGRESS TRUE
     TLS_VERIFY TRUE
     CMAKE_ARGS
-      -D CMAKE_BUILD_TYPE=Release
-      -D CMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE
       -D CMAKE_POSITION_INDEPENDENT_CODE=TRUE
       -D CMAKE_INSTALL_PREFIX=<INSTALL_DIR>
-      ${darwin_args}
+      ${cmake_args}
       ${arg_CMAKE_ARGS}
     UPDATE_COMMAND ""
     ${test_command}

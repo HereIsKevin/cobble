@@ -2,33 +2,26 @@ cmake_minimum_required(VERSION 3.26)
 
 project(cobble)
 
-set(SUPPORTED_PLATFORMS Darwin Linux)
-if(NOT CMAKE_SYSTEM_NAME IN_LIST SUPPORTED_PLATFORMS)
-  message(WARNING "Platform \"${CMAKE_SYSTEM_NAME}\" is unsupported")
-endif()
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS FALSE)
-
-if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-  set(CMAKE_OSX_ARCHITECTURES arm64)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 13.5)
-endif()
 
 include(./cmake/ExternalPackage.cmake)
 include(./cmake/NodeModule.cmake)
 
 if(BUILD_DEPS)
-  if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    ExternalPackage_Add(
-      ZLIB
-      URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
-      HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
-      TEST
-    )
+  if(ZLIB_USE_STATIC_LIBS)
+    if(NOT DEFINED ZLIB_ROOT)
+      ExternalPackage_Add(
+        ZLIB
+        URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
+        HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+        TEST
+      )
 
-    ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
+      ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
+    endif()
+
     set(
       PNG_CMAKE_ARGS
       -D "ZLIB_ROOT=${ZLIB_ROOT}"
@@ -88,7 +81,7 @@ if(BUILD_DEPS)
   return()
 endif()
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL Darwin)
+if(ZLIB_USE_STATIC_LIBS AND NOT DEFINED ZLIB_ROOT)
   ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
   set(ZLIB_USE_STATIC_LIBS TRUE)
 endif()
@@ -97,14 +90,18 @@ ExternalPackage_Find(libjpeg-turbo)
 ExternalPackage_Find(PNG)
 ExternalPackage_Find(WebP)
 NodeModule_Find(node-addon-api)
-NodeModule_Find(node-api-headers)
+NodeModule_Find(node-api-headers DEF)
 
 add_library(cobble MODULE)
 target_sources(cobble PRIVATE ./src/cobble.cpp)
 
-target_compile_options(cobble PRIVATE -Wall -Wextra -Wpedantic)
+if(MSVC)
+  target_compile_options(cobble PRIVATE /W4)
+else()
+  target_compile_options(cobble PRIVATE -Wall -Wextra -Wpedantic)
+endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL Darwin)
+if(APPLE)
   target_link_options(cobble PRIVATE -undefined dynamic_lookup)
 endif()
 
