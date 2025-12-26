@@ -28,16 +28,23 @@ jobs:
           platforms: linux/amd64
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: cobble-${{ github.ref_name }}-linux-x64
           path: ./cobble-linux-x64.node
 
   build_macos:
-    name: Build macOS arm64 addon
+    strategy:
+      matrix:
+        include:
+          - os: macos-15
+            arch: arm64
+          - os: macos-15-intel
+            arch: x64
+    name: Build macOS ${{ matrix.arch }} addon
     permissions:
       contents: read
-    runs-on: macos-15
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
@@ -56,15 +63,42 @@ jobs:
           corepack install
           pnpm install --frozen-lockfile
           pnpm prepack
-          strip -x ./cobble-darwin-arm64.node
+          strip -x ./cobble-darwin-${{ matrix.arch }}.node
         env:
           MACOSX_DEPLOYMENT_TARGET: 13.5
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
-          name: cobble-${{ github.ref_name }}-darwin-arm64
-          path: ./cobble-darwin-arm64.node
+          name: cobble-${{ github.ref_name }}-darwin-${{ matrix.arch }}
+          path: ./cobble-darwin-${{ matrix.arch }}.node
+
+  build_windows:
+    name: Build Windows x64 addon
+    permissions:
+      contents: read
+    runs-on: windows-2025
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Build addon
+        run: |
+          corepack enable
+          corepack install
+          pnpm install --frozen-lockfile
+          pnpm prepack
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: cobble-${{ github.ref_name }}-win32-x64
+          path: ./cobble-win32-x64.node
 
   publish:
     name: Publish package to registry
@@ -74,13 +108,14 @@ jobs:
     needs:
       - build_linux
       - build_macos
+      - build_windows
     runs-on: ubuntu-slim
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
 
       - name: Download artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: ./
           pattern: cobble-${{ github.ref_name }}-*
