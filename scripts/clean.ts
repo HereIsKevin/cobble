@@ -8,14 +8,10 @@ const distFiles = [
   "index.js.map",
   "index.d.ts",
   "index.d.ts.map",
-].map((file) => path.join(baseDir, file));
-const addonFile = path.join(
-  baseDir,
   `cobble-${process.platform}-${process.arch}.node`,
-);
+].map((file) => path.join(baseDir, file));
 
 await Promise.all([
   fs.rm(buildDir, { force: true, recursive: true }),
   Promise.all(distFiles.map((file) => fs.rm(file, { force: true }))),
-  fs.rm(addonFile, { force: true }),
 ]);

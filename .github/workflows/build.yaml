@@ -57,6 +57,8 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm prepack
           strip -x ./cobble-darwin-arm64.node
+        env:
+          MACOSX_DEPLOYMENT_TARGET: 13.5
 
       - name: Upload artifact
         uses: actions/upload-artifact@v5

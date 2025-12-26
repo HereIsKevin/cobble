@@ -6,10 +6,18 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS FALSE)
 
+if(NOT DEFINED ZLIB_USE_STATIC_LIBS)
+  if(APPLE)
+    set(ZLIB_USE_STATIC_LIBS FALSE)
+  else()
+    set(ZLIB_USE_STATIC_LIBS TRUE)
+  endif()
+endif()
+
 include(./cmake/ExternalPackage.cmake)
 include(./cmake/NodeModule.cmake)
 
-if(BUILD_DEPS)
+if(DEPS)
   if(ZLIB_USE_STATIC_LIBS)
     if(NOT DEFINED ZLIB_ROOT)
       ExternalPackage_Add(

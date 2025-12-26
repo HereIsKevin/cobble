@@ -10,7 +10,9 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
-        "BUILD_DEPS": true
+        "DEPS": true,
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
       }
     },
     {
@@ -18,7 +20,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
-        "BUILD_DEPS": false,
+        "DEPS": false,
         "CMAKE_BUILD_TYPE": "Debug",
         "CMAKE_EXPORT_COMPILE_COMMANDS": true
       }
@@ -28,7 +30,7 @@
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
-        "BUILD_DEPS": false,
+        "DEPS": false,
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
       }
