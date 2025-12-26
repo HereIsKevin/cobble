@@ -29,6 +29,7 @@ function(NodeModule_Find name)
       set(lib_path "${CMAKE_BINARY_DIR}/deps/${name}/${def_name}.lib")
       set(lib_target "${name}_${def_name}")
 
+      add_custom_target("${lib_target}_generate" ALL DEPENDS "${lib_path}")
       add_custom_command(
         OUTPUT "${lib_path}"
         COMMAND
@@ -39,7 +40,7 @@ function(NodeModule_Find name)
       )
 
       add_library("${lib_target}" SHARED IMPORTED)
-      add_dependencies("${lib_target}" "${lib_path}")
+      add_dependencies("${lib_target}" "${lib_target}_generate")
       set_target_properties(
         "${lib_target}"
         PROPERTIES
