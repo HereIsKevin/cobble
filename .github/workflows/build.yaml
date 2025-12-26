@@ -89,6 +89,7 @@ jobs:
 
       - name: Build addon
         run: |
+          . "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1"
           corepack enable
           corepack install
           pnpm install --frozen-lockfile
@@ -98,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: cobble-${{ github.ref_name }}-win32-x64
-          path: ./cobble-win32-x64.node
+          path: .\cobble-win32-x64.node
 
   publish:
     name: Publish package to registry
