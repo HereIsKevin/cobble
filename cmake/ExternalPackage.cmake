@@ -7,6 +7,15 @@ if(NOT DEFINED EXTERNAL_PACKAGE_PARALLEL_LEVEL)
   ProcessorCount(EXTERNAL_PACKAGE_PARALLEL_LEVEL)
 endif()
 
+if(NOT DEFINED EXTERNAL_PACKAGE_PROPAGATED_VARIABLES)
+  set(
+    EXTERNAL_PACKAGE_PROPAGATED_VARIABLES
+    CMAKE_BUILD_TYPE
+    CMAKE_INTERPROCEDURAL_OPTIMIZATION
+    CMAKE_OSX_DEPLOYMENT_TARGET
+  )
+endif()
+
 function(ExternalPackage_Add name)
   cmake_parse_arguments(PARSE_ARGV 1 arg "TEST" "URL;HASH" "CMAKE_ARGS")
 
@@ -19,20 +28,11 @@ function(ExternalPackage_Add name)
     )
   endif()
 
-  if(CMAKE_BUILD_TYPE)
-    list(APPEND cmake_args -D CMAKE_BUILD_TYPE=Release)
-  endif()
-
-  if(CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-    list(APPEND cmake_args -D CMAKE_INTERPROCEDURAL_OPTIMIZATION=TRUE)
-  endif()
-
-  if(DEFINED CMAKE_OSX_DEPLOYMENT_TARGET)
-    list(
-      APPEND cmake_args
-      -D "CMAKE_OSX_DEPLOYMENT_TARGET=${CMAKE_OSX_DEPLOYMENT_TARGET}"
-    )
-  endif()
+  foreach(variable IN LISTS EXTERNAL_PACKAGE_PROPAGATED_VARIABLES)
+    if(DEFINED "${variable}")
+      list(APPEND cmake_args -D "${variable}=${${variable}}")
+    endif()
+  endforeach()
 
   ExternalProject_Add(
     "${name}"

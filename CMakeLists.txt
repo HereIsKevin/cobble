@@ -91,7 +91,6 @@ endif()
 
 if(ZLIB_USE_STATIC_LIBS AND NOT DEFINED ZLIB_ROOT)
   ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
-  set(ZLIB_USE_STATIC_LIBS TRUE)
 endif()
 
 ExternalPackage_Find(libjpeg-turbo)
