@@ -21,8 +21,16 @@ interface Addon {
   encodePng(image: Image): Promise<Uint8Array>;
 }
 
-// These are just here to make creating single executable applications easier.
+/**
+ * Suggested asset name for addon when embedded in a single executable
+ * application.
+ */
 export const addonAsset = "cobble.node";
+
+/**
+ * Path to addon for locating addon binary to include in single executable
+ * application preparation blob.
+ */
 export let addonPath: string;
 
 // import.meta.filename can only be used from ESM. As a result, when bundling
@@ -65,12 +73,21 @@ else {
   addonPath = path.join(import.meta.dirname, rawAddonPath);
 }
 
-// Piece Interface and Validaiton
+// Piece Interface and Validation
 
+/**
+ * Piece of image to be used as source or destination when cobbling. Pixel
+ * coordinates increase from top to bottom and left to right with the origin at
+ * the top left corner of the image.
+ */
 export interface Piece {
+  /** X-coordinate in pixels of top left corner of piece. */
   left: number;
+  /** Y-coordinate in pixels of top left corner of piece. */
   top: number;
+  /** Width of piece in pixels from top left corner. */
   width: number;
+  /** Height of piece in pixels from top left corner. */
   height: number;
 }
 
@@ -102,6 +119,13 @@ const checkPiece = (piece: Piece, image: Image): void => {
 
 // Image Cobbler
 
+/**
+ * Cobbler decodes, cobbles, and encodes images from data supplied. Extensive
+ * numeric checks ensure no invalid operations can be performed for safety.
+ * Image sizes are limited to 16,383 by 16,383 pixels for all image formats.
+ * ICC profiles are fully supported. Transparency and animated images are not
+ * supported.
+ */
 export class Cobbler {
   #image: Image;
   #buffer: Uint8Array;
@@ -111,6 +135,14 @@ export class Cobbler {
     this.#buffer = new Uint8Array(image.width * image.height * 3);
   }
 
+  /**
+   * Asynchronously decode JPEG or WebP image and create a new instance of
+   * {@link Cobbler}. A completely black buffer with the same size as the
+   * decoded image.
+   *
+   * @param imageData - Encoded JPEG or WebP image
+   * @returns New instance of {@link Cobbler}
+   */
   static async decode(imageData: Uint8Array): Promise<Cobbler> {
     // ff d8 ff are the magic bytes for JPEG images.
     if (imageData[0] === 0xff && imageData[1] == 0xd8 && imageData[2] == 0xff) {
@@ -134,14 +166,23 @@ export class Cobbler {
     }
   }
 
+  /** Width of the decoded image and allocated buffer in pixels. */
   get width(): number {
     return this.#image.width;
   }
 
+  /** Height of the decoded image and allocated buffer in pixels. */
   get height(): number {
     return this.#image.height;
   }
 
+  /**
+   * Copy a piece from the decoded image to the allocated buffer. Both pieces
+   * must have the same width and height.
+   *
+   * @param from - Piece to copy from in decoded image
+   * @param to - Piece to copy to in allocated buffer
+   */
   cobble(from: Piece, to: Piece): void {
     checkPiece(from, this.#image);
     checkPiece(to, this.#image);
@@ -165,6 +206,15 @@ export class Cobbler {
     }
   }
 
+  /**
+   * Asynchronously encode buffer to high-quality PNG. Since this operation is
+   * very slow, usually taking 1 second for typical images, it is done on the
+   * libuv threadpool. By default, the threadpool only has 4 threads, so to
+   * increase performance, it is recommended to set the environment variable
+   * `UV_THREADPOOL_SIZE` to the number of processor cores.
+   *
+   * @returns Encoded PNG image
+   */
   encode(): Promise<Uint8Array> {
     return addon.encodePng({
       width: this.#image.width,
