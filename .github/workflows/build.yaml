@@ -32,6 +32,7 @@ jobs:
         with:
           name: cobble-${{ github.ref_name }}-linux-x64
           path: ./cobble-linux-x64.node
+          if-no-files-found: error
 
   build_macos:
     strategy:
@@ -72,6 +73,7 @@ jobs:
         with:
           name: cobble-${{ github.ref_name }}-darwin-${{ matrix.arch }}
           path: ./cobble-darwin-${{ matrix.arch }}.node
+          if-no-files-found: error
 
   build_windows:
     name: Build Windows x64 addon
@@ -100,6 +102,7 @@ jobs:
         with:
           name: cobble-${{ github.ref_name }}-win32-x64
           path: ./cobble-win32-x64.node
+          if-no-files-found: error
 
   publish:
     name: Publish package to registry
