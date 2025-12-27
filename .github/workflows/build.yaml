@@ -8,10 +8,19 @@ on:
 
 jobs:
   build_linux:
-    name: Build Linux x64 addon
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: x64
+            platform: linux/amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            platform: linux/arm64
+    name: Build Linux ${{ matrix.arch }} addon
     permissions:
       contents: read
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
@@ -22,16 +31,17 @@ jobs:
       - name: Build addon
         uses: docker/build-push-action@v6
         with:
+          build-args: arch=${{ matrix.arch }}
           context: ./
           file: ./Dockerfile
           outputs: type=local, dest=./
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: cobble-${{ github.ref_name }}-linux-x64
-          path: ./cobble-linux-x64.node
+          name: cobble-${{ github.ref_name }}-linux-${{ matrix.arch }}
+          path: ./cobble-linux-${{ matrix.arch }}.node
           if-no-files-found: error
 
   build_macos:
@@ -76,10 +86,17 @@ jobs:
           if-no-files-found: error
 
   build_windows:
-    name: Build Windows x64 addon
+    strategy:
+      matrix:
+        include:
+          - os: windows-2025
+            arch: x64
+          - os: windows-11-arm
+            arch: arm64
+    name: Build Windows ${{ matrix.arch }} addon
     permissions:
       contents: read
-    runs-on: windows-2025
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
@@ -100,8 +117,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          name: cobble-${{ github.ref_name }}-win32-x64
-          path: ./cobble-win32-x64.node
+          name: cobble-${{ github.ref_name }}-win32-${{ matrix.arch }}
+          path: ./cobble-win32-${{ matrix.arch }}.node
           if-no-files-found: error
 
   publish:

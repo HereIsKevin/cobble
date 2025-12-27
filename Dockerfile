@@ -1,4 +1,5 @@
 FROM almalinux:8 AS build
+ARG arch
 
 # Install dependencies.
 RUN dnf install --assumeyes dnf-plugins-core && \
@@ -18,9 +19,9 @@ RUN source /opt/rh/gcc-toolset-15/enable && \
     corepack install && \
     pnpm install --frozen-lockfile && \
     pnpm prepack && \
-    strip ./cobble-linux-x64.node
+    strip ./cobble-linux-$arch.node
 
 # Copy addon to blank stage for export.
 FROM scratch
-ARG node_version
-COPY --from=build /root/cobble/cobble-linux-x64.node /
+ARG arch
+COPY --from=build /root/cobble/cobble-linux-$arch.node /
