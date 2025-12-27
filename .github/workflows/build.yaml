@@ -99,7 +99,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: cobble-${{ github.ref_name }}-win32-x64
-          path: .\cobble-win32-x64.node
+          path: ./cobble-win32-x64.node
 
   publish:
     name: Publish package to registry
