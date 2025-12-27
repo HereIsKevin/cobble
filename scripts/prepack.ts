@@ -9,13 +9,11 @@ const addonDest = path.join(
   `cobble-${process.platform}-${process.arch}.node`,
 );
 
-const spawn = (command: string, args: string[]): void => {
-  // Executing Node module shims works on *nix systems without shell, but needs
-  // the shell option enabled to work on Windows.
-  const child = spawnSync(command, args, {
+const spawn = (command: string): void => {
+  const child = spawnSync(command, {
     cwd: baseDir,
     stdio: "inherit",
-    shell: process.platform === "win32",
+    shell: true,
   });
 
   if (child.error !== undefined) {
@@ -27,7 +25,7 @@ const spawn = (command: string, args: string[]): void => {
   }
 };
 
-spawn("cmake", ["--workflow", "--preset", "deps"]);
-spawn("cmake", ["--workflow", "--preset", "release"]);
-spawn("tsc", ["--project", "./tsconfig.build.json"]);
+spawn("cmake --workflow --preset deps");
+spawn("cmake --workflow --preset release");
+spawn("tsc --project ./tsconfig.build.json");
 await fs.copyFile(addonSrc, addonDest);
