@@ -9,12 +9,14 @@ const addonDest = path.join(
   `cobble-${process.platform}-${process.arch}.node`,
 );
 
-const spawnOptions = {
-  cwd: baseDir,
-  stdio: "inherit",
-} as const;
+const spawn = (command: string, args: string[]): void => {
+  const child = spawnSync(command, args, { cwd: baseDir, stdio: "inherit" });
+  if (child.status !== 0) {
+    process.exit(child.status);
+  }
+};
 
-spawnSync("cmake", ["--workflow", "--preset", "deps"], spawnOptions);
-spawnSync("cmake", ["--workflow", "--preset", "release"], spawnOptions);
-spawnSync("tsc", ["--project", "./tsconfig.build.json"], spawnOptions);
+spawn("cmake", ["--workflow", "--preset", "deps"]);
+spawn("cmake", ["--workflow", "--preset", "release"]);
+spawn("tsc", ["--project", "./tsconfig.build.json"]);
 await fs.copyFile(addonSrc, addonDest);
