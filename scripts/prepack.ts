@@ -10,7 +10,18 @@ const addonDest = path.join(
 );
 
 const spawn = (command: string, args: string[]): void => {
-  const child = spawnSync(command, args, { cwd: baseDir, stdio: "inherit" });
+  // Executing Node module shims works on *nix systems without shell, but needs
+  // the shell option enabled to work on Windows.
+  const child = spawnSync(command, args, {
+    cwd: baseDir,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+
+  if (child.error !== undefined) {
+    throw child.error;
+  }
+
   if (child.status !== 0) {
     process.exit(child.status);
   }
