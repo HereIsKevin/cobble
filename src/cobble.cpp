@@ -12,7 +12,7 @@
 #include <webp/demux.h>
 
 static_assert(sizeof(int) == 4, "int must be exactly 32 bits");
-static_assert(sizeof(std::size_t) >= 8, "size_t must be at least 64 bits");
+static_assert(sizeof(std::size_t) >= 4, "size_t must be at least 32 bits");
 
 constexpr std::uint32_t MAX_WIDTH = (2 << 13) - 1;
 constexpr std::uint32_t MAX_HEIGHT = (2 << 13) - 1;
