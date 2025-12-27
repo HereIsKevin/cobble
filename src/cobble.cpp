@@ -788,11 +788,12 @@ private:
       if (!iccProfileValue.IsTypedArray()) {
         throw Napi::TypeError::New(env, "Expect ICC profile to be TypedArray");
       }
-      Napi::TypedArray typedArray = iccProfileValue.As<Napi::TypedArray>();
-      if (typedArray.TypedArrayType() != napi_uint8_array) {
+      Napi::TypedArray iccProfileTypedArray =
+        iccProfileValue.As<Napi::TypedArray>();
+      if (iccProfileTypedArray.TypedArrayType() != napi_uint8_array) {
         throw Napi::TypeError::New(env, "Expect ICC profile to be Uint8Array");
       }
-      iccProfile = typedArray.As<Napi::Uint8Array>();
+      iccProfile = iccProfileTypedArray.As<Napi::Uint8Array>();
     }
 
     // Encode PNG asynchronously.
