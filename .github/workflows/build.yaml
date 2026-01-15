@@ -118,7 +118,7 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: cobble-${{ github.ref_name }}-win32-${{ matrix.arch }}
-          path: ./cobble-win32-${{ matrix.arch }}.node
+          path: .\cobble-win32-${{ matrix.arch }}.node
           if-no-files-found: error
 
   publish:
