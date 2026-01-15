@@ -52,8 +52,8 @@ if(DEPS)
 
   ExternalPackage_Add(
     PNG
-    URL https://download.sourceforge.net/libpng/libpng-1.6.53.tar.gz
-    HASH da0b045cbb1d06a8fc9696f9441359f70645f280ff24ae453ccb7c722353654f
+    URL https://download.sourceforge.net/libpng/libpng-1.6.54.tar.gz
+    HASH 472db714567391842e410090df5a37e0f5b2ec67148a3007678b0482d2ba5219
     CMAKE_ARGS
       -D PNG_FRAMEWORK=FALSE
       -D PNG_HARDWARE_OPTIMIZATIONS=TRUE
