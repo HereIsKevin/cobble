@@ -16,6 +16,7 @@ jobs:
             platform: linux/amd64
           - os: ubuntu-24.04 # ubuntu-24.04-arm
             arch: arm64
+            args: --no-test
             platform: linux/arm64
     name: Build Linux ${{ matrix.arch }} addon
     permissions:
@@ -31,7 +32,7 @@ jobs:
       - name: Build addon
         uses: docker/build-push-action@v6
         with:
-          build-args: arch=${{ matrix.arch }}
+          build-args: arch=${{ matrix.arch }}, args=${{ matrix.args }}
           context: ./
           file: ./Dockerfile
           outputs: type=local, dest=./
@@ -91,10 +92,13 @@ jobs:
         include:
           - os: windows-2025
             arch: x64
-            vs_arch: amd64
+            vs_host_arch: amd64
+            vs_target_arch: amd64
           - os: windows-2025 # windows-11-arm
             arch: arm64
-            vs_arch: arm64
+            args: --no-test --arch=arm64
+            vs_host_arch: amd64
+            vs_target_arch: arm64
     name: Build Windows ${{ matrix.arch }} addon
     permissions:
       contents: read
@@ -110,11 +114,11 @@ jobs:
 
       - name: Build addon
         run: |
-          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1" -Arch ${{ matrix.vs_arch }}
+          & "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\Launch-VsDevShell.ps1" -HostArch ${{ matrix.vs_host_arch }} -Arch ${{ matrix.vs_target_arch }}
           corepack enable
           corepack install
           pnpm install --frozen-lockfile
-          pnpm prepack
+          pnpm prepack ${{ matrix.args }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
