@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.26)
 
 project(cobble)
 
+option(DEPS "Build dependencies, must be run once before building addon")
+option(TEST_DEPS "Run tests to verify dependencies are built properly" TRUE)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_EXTENSIONS FALSE)
@@ -18,20 +21,26 @@ include(./cmake/ExternalPackage.cmake)
 include(./cmake/NodeModule.cmake)
 
 if(DEPS)
+  if(TEST_DEPS)
+    set(test_args TEST)
+  endif()
+
   if(ZLIB_USE_STATIC_LIBS)
     if(NOT DEFINED ZLIB_ROOT)
       ExternalPackage_Add(
         ZLIB
         URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
         HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
-        TEST
+        CMAKE_ARGS
+          -D "ZLIB_BUILD_EXAMPLES=${TEST_DEPS}"
+        ${test_args}
       )
 
       ExternalPackage_Get_Directory(ZLIB ZLIB_ROOT)
     endif()
 
     set(
-      PNG_CMAKE_ARGS
+      png_cmake_args
       -D "ZLIB_ROOT=${ZLIB_ROOT}"
       -D ZLIB_USE_STATIC_LIBS=TRUE
     )
@@ -42,12 +51,13 @@ if(DEPS)
     URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.3/libjpeg-turbo-3.1.3.tar.gz
     HASH 075920b826834ac4ddf97661cc73491047855859affd671d52079c6867c1c6c0
     CMAKE_ARGS
-      -D ENABLE_SHARED=TRUE
+      -D "ENABLE_SHARED=${TEST_DEPS}"
       -D ENABLE_STATIC=TRUE
       -D WITH_SIMD=TRUE
-      -D WITH_TESTS=TRUE
+      -D "WITH_TOOLS=${TEST_DEPS}"
+      -D "WITH_TESTS=${TEST_DEPS}"
       -D WITH_TURBOJPEG=TRUE
-    TEST
+    ${test_args}
   )
 
   ExternalPackage_Add(
@@ -57,12 +67,12 @@ if(DEPS)
     CMAKE_ARGS
       -D PNG_FRAMEWORK=FALSE
       -D PNG_HARDWARE_OPTIMIZATIONS=TRUE
-      -D PNG_SHARED=TRUE
+      -D "PNG_SHARED=${TEST_DEPS}"
       -D PNG_STATIC=TRUE
-      -D PNG_TESTS=TRUE
+      -D "PNG_TESTS=${TEST_DEPS}"
       -D PNG_TOOLS=FALSE
-      ${PNG_CMAKE_ARGS}
-    TEST
+      ${png_cmake_args}
+    ${test_args}
   )
 
   ExternalPackage_Add(
