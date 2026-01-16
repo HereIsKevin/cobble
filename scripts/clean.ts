@@ -8,7 +8,9 @@ const distFiles = [
   "index.js.map",
   "index.d.ts",
   "index.d.ts.map",
-  `cobble-${process.platform}-${process.arch}.node`,
+  ...(await fs.readdir(baseDir)).filter(
+    (entry) => entry.startsWith("cobble-") && entry.endsWith(".node"),
+  ),
 ].map((file) => path.join(baseDir, file));
 
 await Promise.all([
