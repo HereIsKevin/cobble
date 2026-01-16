@@ -18,7 +18,7 @@ const baseDir = path.dirname(import.meta.dirname);
 const addonSrc = path.join(baseDir, "build/cobble.node");
 const addonDest = path.join(
   baseDir,
-  `cobble-${process.platform}-${process.arch}.node`,
+  `cobble-${platform ?? process.platform}-${arch ?? process.arch}.node`,
 );
 
 const spawn = (command: string): void => {
