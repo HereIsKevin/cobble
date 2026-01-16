@@ -1,6 +1,5 @@
 FROM almalinux:8 AS build
 ARG arch
-ARG args
 
 # Install dependencies.
 RUN dnf install --assumeyes dnf-plugins-core && \
@@ -19,7 +18,7 @@ RUN source /opt/rh/gcc-toolset-15/enable && \
     corepack enable && \
     corepack install && \
     pnpm install --frozen-lockfile && \
-    pnpm prepack $args && \
+    pnpm prepack --no-test && \
     strip ./cobble-linux-$arch.node
 
 # Copy addon to blank stage for export.

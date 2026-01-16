@@ -16,7 +16,6 @@ jobs:
             platform: linux/amd64
           - os: ubuntu-24.04 # ubuntu-24.04-arm
             arch: arm64
-            args: --no-test
             platform: linux/arm64
     name: Build Linux ${{ matrix.arch }} addon
     permissions:
@@ -32,7 +31,7 @@ jobs:
       - name: Build addon
         uses: docker/build-push-action@v6
         with:
-          build-args: arch=${{ matrix.arch }}, args=${{ matrix.args }}
+          build-args: arch=${{ matrix.arch }}
           context: ./
           file: ./Dockerfile
           outputs: type=local, dest=./
@@ -67,14 +66,18 @@ jobs:
           node-version: 24
 
       - name: Set up Xcode toolchain
-        run: sudo xcode-select --switch /Applications/Xcode_26.1.app
+        run: sudo xcode-select --switch /Applications/Xcode_26.2.app
+
+      - if: matrix.arch == 'x64'
+        name: Install NASM
+        run: brew install nasm
 
       - name: Build addon
         run: |
           corepack enable
           corepack install
           pnpm install --frozen-lockfile
-          pnpm prepack
+          pnpm prepack --no-test
           strip -x ./cobble-darwin-${{ matrix.arch }}.node
         env:
           MACOSX_DEPLOYMENT_TARGET: 13.5
@@ -96,7 +99,6 @@ jobs:
             vs_target_arch: amd64
           - os: windows-2025 # windows-11-arm
             arch: arm64
-            args: --no-test --arch=arm64
             vs_host_arch: amd64
             vs_target_arch: arm64
     name: Build Windows ${{ matrix.arch }} addon
@@ -118,7 +120,7 @@ jobs:
           corepack enable
           corepack install
           pnpm install --frozen-lockfile
-          pnpm prepack ${{ matrix.args }}
+          pnpm prepack --no-test --arch=${{ matrix.arch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v6
