@@ -29,10 +29,10 @@ if(DEPS)
     if(NOT DEFINED ZLIB_ROOT)
       ExternalPackage_Add(
         ZLIB
-        URL https://zlib.net/fossils/zlib-1.3.1.tar.gz
-        HASH 9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+        URL https://zlib.net/fossils/zlib-1.3.2.tar.gz
+        HASH bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16
         CMAKE_ARGS
-          -D "ZLIB_BUILD_EXAMPLES=${TEST_DEPS}"
+          -D "ZLIB_BUILD_TESTING=${TEST_DEPS}"
         ${test_args}
       )
 
