@@ -28,10 +28,44 @@ interface Addon {
 export const addonAsset = "cobble.node";
 
 /**
- * Path to addon for locating addon binary to include in single executable
- * application preparation blob.
+ * Path to addon binary that is currently loaded. Useful for building a single
+ * executable application for the current platform and architecture.
  */
 export let addonPath: string;
+
+/**
+ * Find addon binary for other platforms and architectures. Useful for building
+ * single executable applications for other platforms and architectures.
+ */
+export const resolveAddonPath = (platform: string, arch: string): string => {
+  if (isSea()) {
+    throw new Error("Cannot resolve addon path from within SEA");
+  }
+
+  let development: boolean;
+  try {
+    fs.accessSync(path.join(import.meta.dirname, "build/cobble.node"));
+    development = true;
+  } catch {
+    development = false;
+  }
+
+  if (development) {
+    throw new Error("Cannot resolve addon path during development");
+  }
+
+  const addonPath = path.join(
+    import.meta.dirname,
+    `cobble-${platform}-${arch}.node`,
+  );
+
+  try {
+    fs.accessSync(addonPath);
+    return addonPath;
+  } catch {
+    throw new Error(`Cannot find addon for ${platform} ${arch}`);
+  }
+};
 
 // import.meta.filename can only be used from ESM. As a result, when bundling
 // for single executable applications, which must be CommonJS, the user must
