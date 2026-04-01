@@ -48,8 +48,8 @@ if(DEPS)
 
   ExternalPackage_Add(
     libjpeg-turbo
-    URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.3/libjpeg-turbo-3.1.3.tar.gz
-    HASH 075920b826834ac4ddf97661cc73491047855859affd671d52079c6867c1c6c0
+    URL https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/3.1.4.1/libjpeg-turbo-3.1.4.1.tar.gz
+    HASH ecae8008e2cc9ade2f2c1bb9d5e6d4fb73e7c433866a056bd82980741571a022
     CMAKE_ARGS
       -D "ENABLE_SHARED=${TEST_DEPS}"
       -D ENABLE_STATIC=TRUE
@@ -62,8 +62,8 @@ if(DEPS)
 
   ExternalPackage_Add(
     PNG
-    URL https://download.sourceforge.net/libpng/libpng-1.6.55.tar.gz
-    HASH 4b0abab6d219e95690ebe4db7fc9aa95f4006c83baaa022373c0c8442271283d
+    URL https://download.sourceforge.net/libpng/libpng-1.6.56.tar.gz
+    HASH 8f91e941a07fb1069ebb3855278f82a849e6af14ca05821e14ec3d5348697ea5
     CMAKE_ARGS
       -D PNG_FRAMEWORK=FALSE
       -D PNG_HARDWARE_OPTIMIZATIONS=TRUE

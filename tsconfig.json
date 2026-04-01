@@ -16,6 +16,7 @@
     "moduleResolution": "nodenext",
     "noUncheckedSideEffectImports": true,
     "rewriteRelativeImportExtensions": true,
+    "types": ["node"],
 
     // Emit
     "declaration": true,
