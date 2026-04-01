@@ -14,7 +14,7 @@ jobs:
           - os: ubuntu-24.04
             arch: x64
             platform: linux/amd64
-          - os: ubuntu-24.04 # ubuntu-24.04-arm
+          - os: ubuntu-24.04-arm
             arch: arm64
             platform: linux/arm64
     name: Build Linux ${{ matrix.arch }} addon
@@ -97,7 +97,7 @@ jobs:
             arch: x64
             vs_host_arch: amd64
             vs_target_arch: amd64
-          - os: windows-2025 # windows-11-arm
+          - os: windows-11-arm
             arch: arm64
             vs_host_arch: amd64
             vs_target_arch: arm64
