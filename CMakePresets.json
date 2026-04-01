@@ -11,8 +11,7 @@
       "binaryDir": "${sourceDir}/build/",
       "cacheVariables": {
         "DEPS": true,
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_INTERPROCEDURAL_OPTIMIZATION": true
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
